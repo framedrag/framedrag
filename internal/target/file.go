@@ -341,6 +341,6 @@ func (f *fileTarget) handler() http.Handler {
 		if r.Method == http.MethodHead {
 			return
 		}
-		_, _ = w.Write(b)
+		_, _ = w.Write(b) // #nosec G705 -- text/plain plus nosniff; bytes are IP lists this process wrote
 	})
 }
