@@ -1,0 +1,14 @@
+# Test overlay exercising all three capabilities.
+disable:
+  - Dan_me_TOR
+
+feeds:
+  - name: My_Local_Feed
+    url: https://intel.example.net/badguys.txt
+    description: In-house blocklist
+    category: LOCAL
+    format: plain
+    cadence_hours: 24
+
+api_keys:
+  Pulsedive: "sekrit-key-123"

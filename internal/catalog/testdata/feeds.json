@@ -1,0 +1,150 @@
+{
+  "description": "pfBlockerNG IPv4/IPv6/DNSBL Feeds (trimmed test fixture)",
+  "copyright": [
+    "*",
+    "* pfblockerng_feeds.json",
+    "*"
+  ],
+  "ipv4": {
+    "PRI1": {
+      "info": "PRI1 alias is a Primary Tier collection of Feeds from the most reputable blocklist providers.",
+      "description": "PRI1 - Collection of Feeds from the most reputable blocklist providers. (Primary tier)",
+      "action": "block",
+      "cron": "01hour",
+      "feeds": [
+        {
+          "feed": "Abuse Feodo Tracker",
+          "website": "https://feodotracker.abuse.ch/",
+          "url": "https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.txt",
+          "header": "Abuse_Feodo_C2",
+          "alternate": [
+            {
+              "url": "https://feodotracker.abuse.ch/downloads/ipblocklist_aggressive.txt",
+              "header": "Abuse_Feodo_C2_Agr",
+              "info": "May cause False positives!"
+            }
+          ]
+        },
+        {
+          "status": "discontinued",
+          "feed": "Abuse Ransomware Tracker",
+          "website": "https://ransomwaretracker.abuse.ch/",
+          "url": "https://ransomwaretracker.abuse.ch/downloads/RW_IPBL.txt",
+          "header": "Abuse_IPBL"
+        },
+        {
+          "feed": "CINS Army",
+          "website": "https://cinsarmy.com",
+          "contact": "https://cinsarmy.com/contact-us/",
+          "url": "https://cinsarmy.com/list/ci-badguys.txt",
+          "header": "CINS_army"
+        }
+      ]
+    },
+    "PRI3": {
+      "info": "PRI3 alias is a Tertiary Tier collection of Feeds.",
+      "description": "PRI3 - Collection of Feeds (Tertiary tier)",
+      "action": "block",
+      "cron": "01hour",
+      "feeds": [
+        {
+          "feed": "Pulsedive",
+          "website": "https://pulsedive.com/products/feed.php",
+          "url": "https://pulsedive.com/premium?key=_API_KEY_&types=ip",
+          "register": "https://pulsedive.com/premium/purchase.php",
+          "info": "Subscription based feed only!",
+          "header": "Pulsedive"
+        }
+      ]
+    },
+    "TOR": {
+      "info": "TOR alias will collect a list of TOR exit nodes.",
+      "description": "TOR - Collection of TOR exit node Feeds",
+      "action": "block",
+      "cron": "01hour",
+      "feeds": [
+        {
+          "feed": "Dan.me.uk",
+          "website": "https://www.dan.me.uk/",
+          "url": "https://www.dan.me.uk/torlist/",
+          "header": "Dan_me_TOR"
+        }
+      ]
+    },
+    "AWS_4": {
+      "info": "Amazon AWS IP ranges.",
+      "description": "AWS - Amazon AWS IP ranges",
+      "action": "block",
+      "cron": "Weekly",
+      "feeds": [
+        {
+          "feed": "Amazon AWS",
+          "website": "https://aws.amazon.com/",
+          "url": "https://ip-ranges.amazonaws.com/ip-ranges.json",
+          "header": "AWS_v4"
+        }
+      ]
+    }
+  },
+  "ipv6": {
+    "PRI1_6": {
+      "info": "PRI1 IPv6 alias is a Primary Tier collection of Feeds.",
+      "description": "PRI1 IPv6 - Collection of Feeds from the most reputable blocklist providers. (Primary tier)",
+      "action": "block",
+      "cron": "01hour",
+      "feeds": [
+        {
+          "feed": "Emerging Threats IPv6",
+          "website": "http://doc.emergingthreats.net/",
+          "url": "https://rules.emergingthreats.net/blockrules/compromised-ips.txt",
+          "header": "ET_Comp6"
+        }
+      ]
+    },
+    "VPN_6": {
+      "status": "discontinued",
+      "info": "VPN IPv6 ranges.",
+      "description": "VPN - Collection of VPN IPv6 Feeds",
+      "action": "block",
+      "cron": "Weekly",
+      "feeds": [
+        {
+          "feed": "Example VPN",
+          "website": "https://example.com/",
+          "url": "https://example.com/vpn6.txt",
+          "header": "VPN6"
+        }
+      ]
+    },
+    "SFS_6": {
+      "info": "StopForumSpam IPv6.",
+      "description": "SFS IPv6 - StopForumSpam",
+      "action": "block",
+      "cron": "12hours",
+      "feeds": [
+        {
+          "feed": "StopForumSpam",
+          "website": "https://www.stopforumspam.com/",
+          "url": "https://www.stopforumspam.com/downloads/listed_ip_7_ipv46.gz",
+          "header": "SFS_toxic6"
+        }
+      ]
+    }
+  },
+  "dnsbl": {
+    "EasyList": {
+      "info": "DNSBL category, out of scope for framedrag; the loader must skip this section.",
+      "description": "EasyList Feeds",
+      "action": "unbound",
+      "cron": "EveryDay",
+      "feeds": [
+        {
+          "feed": "EasyList",
+          "website": "https://easylist.to/",
+          "url": "https://easylist.to/easylist/easylist.txt",
+          "header": "EasyList"
+        }
+      ]
+    }
+  }
+}
