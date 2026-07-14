@@ -1,0 +1,105 @@
+# GoReleaser v2 config. Triggered by the release.yml workflow on v*.*.* tags.
+# See https://goreleaser.com for documentation.
+#
+# Targets: linux, darwin, and freebsd (pfSense and OPNsense are FreeBSD;
+# freebsd builds are not optional here), amd64 + arm64, static (CGO off).
+version: 2
+
+project_name: framedrag
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: framedrag
+    main: ./cmd/framedrag
+    binary: framedrag
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github-native
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Dependencies
+      regexp: '^.*?deps(\(.+\))??!?:.+$'
+      order: 2
+    - title: Other
+      order: 999
+
+sboms:
+  - artifacts: archive
+
+# Keyless signing via cosign + GitHub OIDC. Signs checksums.txt only;
+# verifying checksums.txt transitively verifies every archive.
+# Uses cosign v2 bundle format: one .sig file contains signature + certificate.
+signs:
+  - cmd: cosign
+    args:
+      - sign-blob
+      - "--yes"
+      - "--bundle=${signature}"
+      - "${artifact}"
+    artifacts: checksum
+    output: true
+
+release:
+  github:
+    owner: framedrag
+    name: framedrag
+  draft: false
+  prerelease: auto
+  mode: append
+  name_template: "v{{ .Version }}"
+  footer: |
+    ---
+    **Verifying a release**
+
+    1. Download `checksums.txt` and `checksums.txt.sig`.
+    2. Verify the signature:
+       ```sh
+       cosign verify-blob \
+         --bundle      checksums.txt.sig \
+         --certificate-identity-regexp 'https://github.com/framedrag/framedrag' \
+         --certificate-oidc-issuer     'https://token.actions.githubusercontent.com' \
+         checksums.txt
+       ```
+    3. Verify the archive: `sha256sum -c checksums.txt`.
