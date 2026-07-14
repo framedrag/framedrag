@@ -8,6 +8,8 @@
 // recorded alongside. We track the catalog; we do not fork it.
 package catalog
 
+import "strings"
+
 // Feed is one feed the pipeline can fetch. Fields beyond these may be
 // added by the catalog owner; existing fields must not change shape.
 type Feed struct {
@@ -34,4 +36,35 @@ type Feed struct {
 	// that legitimately swing. 0 means use the global default.
 	DeltaThresholdPct int  `yaml:"delta_threshold_pct,omitempty" json:"delta_threshold_pct,omitempty"`
 	Disabled          bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
+	// Website is the feed provider's homepage, carried over from the
+	// upstream catalog for attribution and debugging.
+	Website string `yaml:"website,omitempty" json:"website,omitempty"`
+	// IPVersion is "ipv4" or "ipv6", from the upstream catalog section
+	// the feed was defined under. Empty means unspecified (user feeds).
+	IPVersion string `yaml:"ip_version,omitempty" json:"ip_version,omitempty"`
+	// RequiresKey is computed by Load: true when URL still contains an
+	// unfilled _API_KEY_ placeholder after overlay application. Such a
+	// feed is excluded from Select and must never be fetched. It is
+	// not settable from the overlay.
+	RequiresKey bool `yaml:"-" json:"requires_key,omitempty"`
+
+	// apiKey is the secret the overlay substituted into URL. It is
+	// retained only so String and RedactedURL can redact it; it is
+	// never serialized and must never be logged.
+	apiKey string
+}
+
+// RedactedURL returns URL safe for logs and error messages: any API
+// key substituted by the overlay is replaced with _REDACTED_.
+func (f Feed) RedactedURL() string {
+	if f.apiKey == "" {
+		return f.URL
+	}
+	return strings.ReplaceAll(f.URL, f.apiKey, "_REDACTED_")
+}
+
+// String renders the feed for humans. It never exposes API keys; use
+// it (or RedactedURL) in all log and error output instead of URL.
+func (f Feed) String() string {
+	return f.Name + " (" + f.RedactedURL() + ")"
 }

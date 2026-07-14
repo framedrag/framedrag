@@ -1,0 +1,43 @@
+# feeds.local.yaml - local overlay for the vendored feed catalog.
+#
+# Copy this file to feeds.local.yaml and point framedrag at it. The
+# vendored catalog (catalog/feeds.json) is never edited; everything
+# local lives here. This file may contain API keys: keep it out of
+# version control and readable only by the user running framedrag.
+#
+# Feed names below are the catalog's unique feed identifiers (the
+# upstream "header" field), e.g. Abuse_Feodo_C2, Pulsedive, ET_Block.
+# List them with: framedrag catalog list
+
+# 1. Disable vendored feeds by name. Disabled feeds are never fetched
+#    and never selected, but still show up in `catalog list`.
+disable:
+  - Dan_me_TOR
+  - ISC_Block
+
+# 2. Add your own feeds. Every field of a catalog feed is available;
+#    name and url are required. User feeds are selectable by their
+#    name, by category, or by tier, exactly like vendored feeds.
+feeds:
+  - name: My_Company_Intel
+    url: https://intel.example.net/blocklist.txt
+    description: In-house threat intel blocklist
+    category: LOCAL          # invent your own; usable in aliases[].feeds
+    tier: PRI1               # optional; joins tier-based selection
+    format: plain            # parser name; empty means auto-detect
+    cadence_hours: 24        # stated update cadence, for staleness checks
+    delta_threshold_pct: 60  # this feed legitimately swings; loosen health check
+
+  # A CSV feed, taking the address from the third column:
+  - name: My_CSV_Feed
+    url: https://intel.example.net/blocklist.csv
+    format: csv
+    csv_column: 2
+
+# 3. Supply API keys for registration-gated feeds. The key replaces
+#    the _API_KEY_ placeholder in the feed's URL. A gated feed without
+#    a key here is skipped automatically (marked requires_key), never
+#    fetched. Keys are never logged and never leave this machine
+#    except in the request to the feed provider itself.
+api_keys:
+  Pulsedive: "your-pulsedive-api-key"

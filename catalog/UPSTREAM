@@ -1,0 +1,8 @@
+Provenance of catalog/feeds.json. Do not hand-edit the JSON; refresh it
+with `framedrag catalog sync` and update this file alongside.
+
+repo:    github.com/pfBlockerNG/pfBlockerNG
+branch:  devel
+path:    src/usr/local/www/pfblockerng/pfblockerng_feeds.json
+commit:  a33aee1a294cfc35660d6cc274e1a3b5f8b0148d
+fetched: 2026-07-14
