@@ -1,0 +1,6 @@
+# Emerging Threats fwip rules.
+# More information available at threats.example
+1.10.16.0/20
+1.19.0.0/16
+2.56.192.0/22
+89.248.165.1

@@ -1,0 +1,6 @@
+; Spamhaus DROP List 2026/07/14 - (c) 2026 The Spamhaus Project
+; Last-Modified: Mon, 13 Jul 2026 22:04:15 GMT
+; Expires: Tue, 15 Jul 2026 10:04:15 GMT
+1.2.3.0/24 ; SBL12345
+5.6.4.0/22 ; SBL54321
+2001:db8:dead::/48 ; SBL999999

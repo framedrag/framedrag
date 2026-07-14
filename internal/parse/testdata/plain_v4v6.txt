@@ -1,0 +1,12 @@
+# Sample plain feed, IPv4 and IPv6 mixed
+; semicolon comments happen too
+
+203.0.113.0/24
+198.51.100.7          # single host, inline comment
+2001:db8:beef::/48
+2001:db8::1 ; inline comment, semicolon style
+	192.0.2.128/25
+not-an-ip
+2001:db8:zz::/48
+
+# trailing comment

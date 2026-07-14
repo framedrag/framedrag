@@ -1,0 +1,7 @@
+# exported blocklist, address in column 1
+id,address,category,last_seen
+1001,203.0.113.9,botnet,2026-07-01
+1002,198.51.100.0/26,scanner,2026-07-02
+1003,2001:db8:bad::/48,"malware, dropper",2026-07-03
+1004,,empty,2026-07-04
+1005,not an ip,junk,2026-07-05
