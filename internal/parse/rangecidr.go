@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/bits"
 	"net/netip"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,10 @@ func (rangeParser) Parse(r io.Reader) ([]netip.Prefix, Stats, error) {
 	var st Stats
 	err := scanLines(r, &st, func(entry string) lineResult {
 		if ps, ok := parseRangeEntry(entry); ok {
+			out = append(out, ps...)
+			return lineParsed
+		}
+		if ps, ok := parseTabularRange(entry); ok {
 			out = append(out, ps...)
 			return lineParsed
 		}
@@ -52,6 +57,34 @@ func parseRangeEntry(s string) ([]netip.Prefix, bool) {
 	start = start.Unmap().WithZone("")
 	end = end.Unmap().WithZone("")
 	if start.Is4() != end.Is4() || end.Less(start) {
+		return nil, false
+	}
+	return rangeToPrefixes(start, end), true
+}
+
+// parseTabularRange parses whitespace-separated "start end netmask
+// ..." rows (ISC/DShield block.txt style): the first two fields are
+// the inclusive range, the third must be a plausible mask width, and
+// anything after that is annotation.
+func parseTabularRange(s string) ([]netip.Prefix, bool) {
+	f := strings.Fields(s)
+	if len(f) < 3 {
+		return nil, false
+	}
+	start, err := netip.ParseAddr(f[0])
+	if err != nil {
+		return nil, false
+	}
+	end, err := netip.ParseAddr(f[1])
+	if err != nil {
+		return nil, false
+	}
+	start = start.Unmap().WithZone("")
+	end = end.Unmap().WithZone("")
+	if start.Is4() != end.Is4() || end.Less(start) {
+		return nil, false
+	}
+	if m, err := strconv.Atoi(f[2]); err != nil || m < 0 || m > 128 {
 		return nil, false
 	}
 	return rangeToPrefixes(start, end), true

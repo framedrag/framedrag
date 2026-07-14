@@ -3,6 +3,7 @@ package parse
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/netip"
 	"strings"
@@ -54,7 +55,7 @@ func (d *detectParser) sniff(data []byte) Parser {
 			continue
 		}
 		seen++
-		if looksSpamhaus(raw) {
+		if looksSpamhaus(raw) || looksSpamhausJSON(raw) {
 			spamV++
 			continue
 		}
@@ -64,6 +65,10 @@ func (d *detectParser) sniff(data []byte) Parser {
 			continue
 		}
 		if _, ok := parseRangeEntry(entry); ok {
+			rangeV++
+			continue
+		}
+		if _, ok := parseTabularRange(entry); ok {
 			rangeV++
 			continue
 		}
@@ -99,6 +104,22 @@ func looksSpamhaus(s string) bool {
 	}
 	_, err := netip.ParsePrefix(strings.TrimSpace(left))
 	return err == nil
+}
+
+// looksSpamhausJSON reports whether a raw candidate line is one
+// object of the Spamhaus JSON-lines DROP format.
+func looksSpamhausJSON(s string) bool {
+	if !strings.HasPrefix(s, "{") {
+		return false
+	}
+	var obj struct {
+		Cidr string `json:"cidr"`
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(s), &obj); err != nil {
+		return false
+	}
+	return obj.Cidr != "" || obj.Type != ""
 }
 
 // sniffCSVColumn reports the first CSV field of the line that parses

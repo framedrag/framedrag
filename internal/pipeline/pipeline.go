@@ -170,16 +170,22 @@ func runFeed(ctx context.Context, opts Options, feed catalog.Feed, now time.Time
 		}
 		in.Prefixes = cached
 	default:
+		// The staleness clock hashes the wire bytes, before unwrapping.
 		sum := sha256.Sum256(fr.Body)
 		in.BodySHA256 = hex.EncodeToString(sum[:])
+		raw, derr := decompress(fr.Body)
 		format := feed.Format
 		if format == "" {
 			format = "detect"
 		}
 		parser, perr := parse.Get(format, parse.Options{CSVColumn: feed.CSVColumn})
-		if perr != nil {
+		switch {
+		case derr != nil:
+			in.FetchErr = fmt.Errorf("decompress: %w", derr)
+		case perr != nil:
 			in.FetchErr = fmt.Errorf("parser: %w", perr)
-		} else {
+		default:
+			fr.Body = raw
 			prefixes, stats, parseErr := parser.Parse(bytes.NewReader(fr.Body))
 			if parseErr != nil {
 				in.FetchErr = fmt.Errorf("parse: %w", parseErr)
