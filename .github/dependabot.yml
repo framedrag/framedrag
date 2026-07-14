@@ -24,3 +24,9 @@ updates:
     labels:
       - dependencies
       - github-actions
+    groups:
+      # codeql-action init/analyze must move in lockstep: mismatched
+      # versions fail the analyze step, so split PRs can never go green.
+      github-actions:
+        patterns:
+          - "*"
