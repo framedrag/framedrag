@@ -1,0 +1,21 @@
+framedrag
+Copyright 2026 the framedrag authors
+
+Licensed under the Apache License, Version 2.0.
+
+Prior art and attribution
+-------------------------
+
+framedrag's feed catalog is derived from pfBlockerNG
+(https://github.com/pfBlockerNG/pfBlockerNG), created by BBcan177 and
+maintained with Rubicon Communications, LLC. pfBlockerNG is licensed
+under the Apache License, Version 2.0. A decade of feed curation, the
+quality tiering (PRI1 through PRI5), and the catalog itself
+(pfblockerng_feeds.json) are pfBlockerNG's work; framedrag tracks that
+catalog rather than forking it.
+
+The underlying technique, null-routing curated IP reputation feeds,
+descends from Paul Vixie and Dave Rand's RBL (1997), which was
+originally distributed as a BGP feed that black-holed spammer IPs, a
+practice known as Remotely Triggered Black Hole (RTBH) filtering.
+framedrag is that idea, at the edge, without BGP.

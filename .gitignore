@@ -1,0 +1,6 @@
+/framedrag
+/dist/
+*.test
+*.out
+.DS_Store
+feeds.local.yaml
