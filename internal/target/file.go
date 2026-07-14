@@ -169,7 +169,7 @@ func (f *fileTarget) Apply(ctx context.Context, sets []AliasSet) (Report, error)
 	if err != nil {
 		return rep, err
 	}
-	if err := os.MkdirAll(f.dir, 0o755); err != nil {
+	if err := os.MkdirAll(f.dir, 0o755); err != nil { // #nosec G301 -- published lists, readable by the URL-table fetcher by design
 		return rep, fmt.Errorf("file target: %w", err)
 	}
 	for _, p := range plans {
@@ -261,7 +261,7 @@ func atomicWrite(dir, file string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name()) // no-op after successful rename
+	defer func() { _ = os.Remove(tmp.Name()) }() // no-op after successful rename
 	if _, err := tmp.Write(content); err != nil {
 		tmp.Close()
 		return err
@@ -330,7 +330,7 @@ func (f *fileTarget) handler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		b, err := os.ReadFile(filepath.Join(f.dir, name))
+		b, err := os.ReadFile(filepath.Join(f.dir, name)) // #nosec G703 -- name is a validated single path element ending in .txt
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -341,6 +341,6 @@ func (f *fileTarget) handler() http.Handler {
 		if r.Method == http.MethodHead {
 			return
 		}
-		w.Write(b)
+		_, _ = w.Write(b)
 	})
 }

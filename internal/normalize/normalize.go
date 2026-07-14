@@ -9,6 +9,7 @@
 package normalize
 
 import (
+	"encoding/binary"
 	"math/bits"
 	"net/netip"
 	"slices"
@@ -142,13 +143,11 @@ func toUint128(a netip.Addr, bits int) uint128 {
 }
 
 func toAddr(u uint128, bits int) netip.Addr {
-	if bits == 32 {
-		return netip.AddrFrom4([4]byte{byte(u.lo >> 24), byte(u.lo >> 16), byte(u.lo >> 8), byte(u.lo)})
-	}
 	var b [16]byte
-	for i := 0; i < 8; i++ {
-		b[i] = byte(u.hi >> (56 - 8*i))
-		b[i+8] = byte(u.lo >> (56 - 8*i))
+	binary.BigEndian.PutUint64(b[:8], u.hi)
+	binary.BigEndian.PutUint64(b[8:], u.lo)
+	if bits == 32 {
+		return netip.AddrFrom4([4]byte(b[12:16]))
 	}
 	return netip.AddrFrom16(b)
 }

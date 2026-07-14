@@ -33,7 +33,7 @@ func NewDir(dir string) (Store, error) {
 		lastgood: filepath.Join(dir, "lastgood"),
 	}
 	for _, d := range []string{s.feeds, s.lastgood} {
-		if err := os.MkdirAll(d, 0o755); err != nil {
+		if err := os.MkdirAll(d, 0o750); err != nil {
 			return nil, fmt.Errorf("state: create %s: %w", d, err)
 		}
 	}
@@ -148,7 +148,7 @@ func writeAtomic(path string, data []byte) error {
 		return fmt.Errorf("state: create temp in %s: %w", dir, err)
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // no-op after successful rename
+	defer func() { _ = os.Remove(tmpName) }() // no-op after successful rename
 
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
@@ -161,7 +161,7 @@ func writeAtomic(path string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("state: close %s: %w", tmpName, err)
 	}
-	if err := os.Chmod(tmpName, 0o644); err != nil {
+	if err := os.Chmod(tmpName, 0o600); err != nil {
 		return fmt.Errorf("state: chmod %s: %w", tmpName, err)
 	}
 	if err := os.Rename(tmpName, path); err != nil {

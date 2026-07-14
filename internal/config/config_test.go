@@ -87,8 +87,8 @@ func TestLoadTable(t *testing.T) {
 		},
 		{
 			name:    "unknown key rejected",
-			yaml:    "state_dir: /s\nsupress: [10.0.0.0/8]\n",
-			wantErr: "field supress not found",
+			yaml:    "state_dir: /s\nsupine: [10.0.0.0/8]\n",
+			wantErr: "field supine not found",
 		},
 		{
 			name:    "unknown nested key rejected",

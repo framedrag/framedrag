@@ -117,7 +117,7 @@ func addrToU128(a netip.Addr) uint128 {
 func u128ToAddr(v uint128, v4 bool) netip.Addr {
 	if v4 {
 		var b [4]byte
-		binary.BigEndian.PutUint32(b[:], uint32(v.lo))
+		binary.BigEndian.PutUint32(b[:], uint32(v.lo)) // #nosec G115 -- v4 addresses occupy only the low 32 bits
 		return netip.AddrFrom4(b)
 	}
 	var b [16]byte
