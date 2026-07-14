@@ -27,7 +27,7 @@ jobs:
       UPSTREAM_URL: https://raw.githubusercontent.com/pfBlockerNG/pfBlockerNG/devel/src/usr/local/www/pfblockerng/pfblockerng_feeds.json
       ISSUE_TITLE: "catalog: upstream feeds.json has diverged from the vendored copy"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fetch upstream catalog
         run: |
@@ -51,7 +51,7 @@ jobs:
       - name: Mint GitHub App token
         if: steps.diff.outputs.changed == 'true'
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.CATALOG_SYNC_APP_ID }}
           private-key: ${{ secrets.CATALOG_SYNC_APP_PRIVATE_KEY }}
