@@ -4,6 +4,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -38,6 +39,11 @@ type Target struct {
 	Type  string `yaml:"type"`
 	Dir   string `yaml:"dir,omitempty"`
 	Serve string `yaml:"serve,omitempty"`
+	// AllowNonLoopback permits a serve address outside 127.0.0.0/8 and
+	// ::1. It must be set explicitly: the localhost server exists to
+	// feed the local firewall, never to re-serve feeds publicly
+	// (docs/SPEC.md section 9).
+	AllowNonLoopback bool `yaml:"allow_non_loopback,omitempty"`
 }
 
 // Load reads and validates the config file at path.
@@ -54,4 +60,34 @@ func Load(path string) (Config, error) {
 	}
 	applyDefaults(&c)
 	return c, validate(c)
+}
+
+// SuppressPrefixes parses the suppress list into prefixes. Entries may
+// be CIDR prefixes or bare IPs; bare IPs become single-address
+// prefixes (/32 for IPv4, /128 for IPv6). Prefixes are masked so the
+// result is canonical.
+func (c Config) SuppressPrefixes() ([]netip.Prefix, error) {
+	out := make([]netip.Prefix, 0, len(c.Suppress))
+	for _, s := range c.Suppress {
+		p, err := parseSuppress(s)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+func parseSuppress(s string) (netip.Prefix, error) {
+	if p, err := netip.ParsePrefix(s); err == nil {
+		return p.Masked(), nil
+	}
+	a, err := netip.ParseAddr(s)
+	if err != nil {
+		return netip.Prefix{}, fmt.Errorf("suppress entry %q: not a CIDR prefix or IP address", s)
+	}
+	if a.Zone() != "" {
+		return netip.Prefix{}, fmt.Errorf("suppress entry %q: zoned addresses are not supported", s)
+	}
+	return netip.PrefixFrom(a, a.BitLen()), nil
 }
