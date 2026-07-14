@@ -1,0 +1,4 @@
+# CRLF feed
+203.0.113.1
+2001:db8::/32
+junk line
