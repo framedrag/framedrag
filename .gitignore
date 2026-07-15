@@ -5,3 +5,5 @@
 .DS_Store
 feeds.local.yaml
 /bin/
+/test/opnsense-lab/.cache/
+/test/opnsense-lab/work/

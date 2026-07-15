@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+# One-off debug probe for the lab VM. argv: <serial.sock> <command...>
+set timeout 2400
+set sock [lindex $argv 0]
+set cmd [join [lrange $argv 1 end] " "]
+log_user 0
+spawn nc -U $sock
+set state 0
+for {set i 0} {$i < 80 && !$state} {incr i} {
+    send "\r"
+    expect {
+        -re "login: $" { set state 1 }
+        -re {root@[^\r\n]*# } { set state 2 }
+        -re {Enter an option:} { set state 3 }
+        timeout {}
+        eof { puts "SOCKET-EOF"; exit 1 }
+    }
+    if {!$state} { sleep 15 }
+}
+if {$state == 0} { puts "NO-LOGIN"; exit 1 }
+if {$state == 1} {
+    send "root\r"
+    expect "Password:" { send "opnsense\r" }
+    expect -re {Enter an option:}
+    set state 3
+}
+if {$state == 3} {
+    send "8\r"
+    expect -re {root@[^\r\n]*# }
+}
+log_user 1
+send "$cmd\r"
+expect -re {root@[^\r\n]*# }
+send "exit\r"
+exit 0

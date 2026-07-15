@@ -1,0 +1,142 @@
+#!/usr/bin/expect -f
+# framedrag OPNsense lab, console driver.
+#
+# QEMU is already running (started by run.sh) with its serial console on
+# a unix socket; this script connects over `nc -U` and drives the whole
+# scenario: login, ensure em0 is LAN at 192.168.1.1, drop to a shell,
+# fetch guest-setup.py from the host, create the fd_lab urltable alias
+# pointing at framedrag's served list, assert the pf table, trigger the
+# host-side update (phase 2), refresh, re-assert.
+#
+# Exit 0 only after LAB-ALL-PASS.
+#
+# argv: <serial.sock>
+# env:  LAB_HTTP_PORT (lab assets), LAB_SERVE_PORT (framedrag serve),
+#       LAB_CTRL_PORT (phase-2 control)
+
+set timeout 2700
+set sock [lindex $argv 0]
+set http_port $env(LAB_HTTP_PORT)
+set serve_port $env(LAB_SERVE_PORT)
+set ctrl_port $env(LAB_CTRL_PORT)
+# The slirp host alias: guests reach the host's loopback at .2.
+set hostip "192.168.1.2"
+
+log_user 1
+
+spawn nc -U $sock
+
+proc die {msg} {
+    puts "\nLAB-DRIVER-FAIL: $msg"
+    exit 1
+}
+
+# ---- boot to login ----------------------------------------------------
+# We may connect mid-boot or after the prompt already printed; a bare CR
+# re-elicits "login:" once the system is up. Nudge periodically.
+set logged_in 0
+for {set i 0} {$i < 90 && !$logged_in} {incr i} {
+    send "\r"
+    expect {
+        -re "login: $" { set logged_in 1 }
+        timeout {}
+        eof { die "serial socket closed during boot" }
+    }
+    if {!$logged_in} { sleep 20 }
+}
+if {!$logged_in} { die "no login prompt" }
+
+send "root\r"
+expect {
+    "Password:" { send "opnsense\r" }
+    timeout { die "no password prompt" }
+}
+
+# ---- console menu: check interface assignment -------------------------
+# The post-login banner lists assignments like:  LAN (em0) -> v4: 192.168.1.1/24
+set need_assign 1
+expect {
+    -re {LAN \(em0\)[^\n]*192\.168\.1\.1} {
+        set need_assign 0
+        exp_continue -continue_timer
+    }
+    -re {Enter an option:} {}
+    timeout { die "no console menu" }
+}
+
+if {$need_assign} {
+    # Reassign: em1 = WAN, em0 = LAN. Prompts vary slightly across
+    # versions; answer generously.
+    send "1\r"
+    expect {
+        -re {LAGGs.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {VLANs.*\[y/N\]}  { send "n\r"; exp_continue }
+        -re {WAN interface name[^\n]*:} { send "em1\r"; exp_continue }
+        -re {LAN interface name[^\n]*:} { send "em0\r"; exp_continue }
+        -re {Optional interface 1[^\n]*:} { send "\r"; exp_continue }
+        -re {proceed.*\[y/N\]} { send "y\r"; exp_continue }
+        -re {Enter an option:} {}
+        timeout { die "interface assignment dialogue stuck" }
+    }
+    # Set LAN address explicitly (option 2), defaults where offered.
+    send "2\r"
+    expect {
+        -re {Enter the number of the interface[^\n]*:} { send "1\r"; exp_continue }
+        -re {Configure IPv4 address LAN interface via DHCP.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {Enter the new LAN IPv4 address[^\n]*:} { send "192.168.1.1\r"; exp_continue }
+        -re {Enter the new LAN IPv4 subnet bit count[^\n]*:} { send "24\r"; exp_continue }
+        -re {upstream gateway address[^\n]*:} { send "\r"; exp_continue }
+        -re {Configure IPv6 address LAN interface via WAN tracking.*\[Y/n\]} { send "n\r"; exp_continue }
+        -re {Configure IPv6 address LAN interface via DHCP6.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {Enter the new LAN IPv6 address[^\n]*:} { send "\r"; exp_continue }
+        -re {enable the DHCP server on LAN.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {change the web GUI protocol.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {generate a new self-signed.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {restore the web GUI access defaults.*\[y/N\]} { send "n\r"; exp_continue }
+        -re {Enter an option:} {}
+        timeout { die "LAN address dialogue stuck" }
+    }
+}
+
+# ---- shell -------------------------------------------------------------
+# Root's shell on OPNsense is csh; don't fight the prompt, match it.
+send "8\r"
+expect {
+    -re {root@[^\r\n]*# } {}
+    timeout { die "no shell prompt" }
+}
+set timeout 900
+
+proc guest {cmd marker} {
+    send "$cmd\r"
+    expect {
+        $marker {}
+        "LAB-FAIL" { die "guest failure (LAB-DETAIL line above has the reason)" }
+        timeout { die "timeout waiting for $marker after: $cmd" }
+        eof { die "serial socket closed" }
+    }
+    expect {
+        -re {root@[^\r\n]*# } {}
+        timeout { die "no prompt after: $cmd" }
+    }
+}
+
+# Sanity: host reachability through the slirp host alias.
+guest "fetch -qo /dev/null http://$hostip:$http_port/guest-setup.py && echo NET-OK" "NET-OK"
+guest "fetch -qo /tmp/guest-setup.py http://$hostip:$http_port/guest-setup.py && echo FETCH-OK" "FETCH-OK"
+
+# Phase 1: alias creation + first fetch from framedrag serve.
+guest "python3 /tmp/guest-setup.py setup http://$hostip:$serve_port/fd_lab.txt" "LAB-SETUP-OK"
+guest "python3 /tmp/guest-setup.py assert http://$hostip:$http_port/expected-v1.json" "LAB-ASSERT-PASS"
+puts "\n=== phase 1 passed: OPNsense pf table matches framedrag output ==="
+
+# Phase 2: host republished the list; OPNsense refreshes and converges.
+guest "fetch -qo - http://$hostip:$ctrl_port/phase2 && echo PHASE2-HOST-DONE" "PHASE2-HOST-DONE"
+guest "python3 /tmp/guest-setup.py refresh" "LAB-REFRESH-OK"
+guest "python3 /tmp/guest-setup.py assert http://$hostip:$http_port/expected-v2.json" "LAB-ASSERT-PASS"
+puts "\n=== phase 2 passed: update propagated into the pf table ==="
+
+puts "\nLAB-ALL-PASS"
+send "/sbin/poweroff\r"
+sleep 5
+exit 0

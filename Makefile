@@ -54,3 +54,9 @@ check: fmt-check vet test-race vuln
 
 clean:
 	rm -f bin/framedrag coverage.out coverage.html
+
+# Boots a real OPNsense under QEMU and proves the URL-table integration
+# end to end. Slow (emulated firewall boot); never wired into CI.
+.PHONY: opnsense-lab
+opnsense-lab:
+	test/opnsense-lab/run.sh

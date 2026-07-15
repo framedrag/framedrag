@@ -39,6 +39,11 @@ Pre-release. M1 (pipeline + health: catalog load, fetch, parsers,
 normalization, health checks, `file` target, `health` command) is in
 progress. There are no releases yet. Expect breaking changes until v0.1.0.
 
+The integration story is proven against a real firewall: `make
+opnsense-lab` boots an actual OPNsense under QEMU, points a URL Table
+alias at framedrag's served lists, and asserts the resulting pf table
+contents, including update propagation (see `test/opnsense-lab/`).
+
 ## The health model
 
 This is the core of the project, not a feature. A blocklist that quietly
